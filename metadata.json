@@ -1,0 +1,5 @@
+{
+  "name": "Remix: App Logo Game",
+  "description": "A multiplayer classroom game where students guess popular app logos as they are slowly revealed step-by-step.",
+  "requestFramePermissions": []
+}
