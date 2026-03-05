@@ -1,10 +1,21 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GameState, Player, AppInfo } from './types';
 import { APPS_DATA } from './constants';
 import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
 import Podium from './components/Podium';
-import { io, Socket } from 'socket.io-client';
+import { db } from './firebase';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  limit, 
+  onSnapshot, 
+  setDoc, 
+  doc, 
+  getDoc,
+  serverTimestamp 
+} from 'firebase/firestore';
 
 const App: React.FC = () => {
   const [gameState, setGameState] = useState<GameState>('LOBBY');
@@ -13,20 +24,25 @@ const App: React.FC = () => {
   const [gameApps, setGameApps] = useState<AppInfo[]>([]);
   const [currentRoundIndex, setCurrentRoundIndex] = useState(0);
   const [startTime, setStartTime] = useState<number>(0);
-  const socketRef = useRef<Socket | null>(null);
 
-  // Socket.io 연결 설정
+  // Firestore 실시간 리더보드 구독
   useEffect(() => {
-    const socket = io();
-    socketRef.current = socket;
+    const q = query(
+      collection(db, 'leaderboard'),
+      orderBy('score', 'desc'),
+      orderBy('time', 'asc'),
+      limit(10)
+    );
 
-    socket.on('leaderboardUpdate', (updatedBoard: Player[]) => {
-      setLeaderboard(updatedBoard);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const players: Player[] = [];
+      snapshot.forEach((doc) => {
+        players.push(doc.data() as Player);
+      });
+      setLeaderboard(players);
     });
 
-    return () => {
-      socket.disconnect();
-    };
+    return () => unsubscribe();
   }, []);
 
   const handleStartGame = useCallback((playerName: string) => {
@@ -38,7 +54,6 @@ const App: React.FC = () => {
     };
     setCurrentPlayer(newPlayer);
     
-    // 전체 앱 중에서 무작위로 섞습니다.
     const shuffledApps = [...APPS_DATA];
     for (let i = shuffledApps.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -59,34 +74,52 @@ const App: React.FC = () => {
     });
   }, []);
 
-  const handleNextRound = useCallback(() => {
+  const handleNextRound = useCallback(async () => {
     if (currentRoundIndex + 1 < gameApps.length) {
       setCurrentRoundIndex(prev => prev + 1);
     } else {
       const endTime = Date.now();
       const totalTime = Math.floor((endTime - startTime) / 1000);
       
-      setCurrentPlayer(prev => {
-        if (!prev) return prev;
-        const finalPlayer = { ...prev, time: totalTime };
+      if (currentPlayer) {
+        const finalPlayer = { ...currentPlayer, time: totalTime };
+        setCurrentPlayer(finalPlayer);
         
-        // 서버에 최종 점수와 시간 제출
-        if (socketRef.current) {
-          socketRef.current.emit('submitScore', finalPlayer);
+        // Firestore에 점수 제출
+        try {
+          const docId = finalPlayer.name.toLowerCase().replace(/\s/g, '');
+          const docRef = doc(db, 'leaderboard', docId);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const existingData = docSnap.data() as Player;
+            // 최고 기록일 때만 업데이트
+            if (finalPlayer.score > existingData.score || 
+               (finalPlayer.score === existingData.score && finalPlayer.time < existingData.time)) {
+              await setDoc(docRef, {
+                ...finalPlayer,
+                updatedAt: serverTimestamp()
+              });
+            }
+          } else {
+            await setDoc(docRef, {
+              ...finalPlayer,
+              updatedAt: serverTimestamp()
+            });
+          }
+        } catch (error) {
+          console.error("Error submitting score to Firestore:", error);
         }
-        
-        return finalPlayer;
-      });
+      }
       
       setGameState('ENDED');
     }
-  }, [currentRoundIndex, gameApps.length, startTime]);
+  }, [currentRoundIndex, gameApps.length, startTime, currentPlayer]);
 
   const handleRestart = useCallback(() => {
     setGameState('LOBBY');
   }, []);
 
-  // 화면에 표시할 플레이어 목록: Top 10 + (순위권에 없는 현재 플레이어)
   const displayPlayers = [...leaderboard];
   if (currentPlayer && !displayPlayers.some(p => p.id === currentPlayer.id)) {
     displayPlayers.push(currentPlayer);

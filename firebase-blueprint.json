@@ -1,0 +1,23 @@
+{
+  "entities": {
+    "Player": {
+      "title": "Player",
+      "description": "A player's game record including score and time.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the player session" },
+        "name": { "type": "string", "description": "Player's nickname" },
+        "score": { "type": "integer", "description": "Total score achieved" },
+        "time": { "type": "integer", "description": "Total time taken in seconds" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "name", "score", "time"]
+    }
+  },
+  "firestore": {
+    "leaderboard/{playerId}": {
+      "schema": "Player",
+      "description": "Collection of leaderboard records"
+    }
+  }
+}
