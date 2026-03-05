@@ -117,17 +117,17 @@ const Lobby: React.FC<LobbyProps> = ({ onStartGame, onResetLeaderboard, leaderbo
         </div>
 
         {/* Bottom Decorative Bar */}
-        <div className="p-4 bg-slate-100 shrink-0 border-t border-slate-200 relative group">
+        <div className="p-4 bg-slate-100 shrink-0 border-t border-slate-200 relative group flex flex-col items-center justify-center gap-1">
           <div className="w-full py-1 flex items-center justify-center gap-2 text-slate-400 font-bold text-xs">
             <Sparkles size={14} className="text-amber-400" />
             실시간 랭킹 업데이트 중
           </div>
-          {/* Hidden Admin Reset Button */}
+          {/* Hidden Admin Reset Button - More visible on hover and positioned below */}
           <button 
             onClick={onResetLeaderboard}
-            className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-10 hover:opacity-100 transition-opacity text-[8px] text-slate-400"
+            className="opacity-0 group-hover:opacity-40 hover:opacity-100 transition-all text-[10px] text-slate-500 font-bold px-2 py-0.5 rounded hover:bg-slate-200"
           >
-            Admin
+            Admin Reset
           </button>
         </div>
       </div>

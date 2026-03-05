@@ -25,6 +25,9 @@ service cloud.firestore {
         request.resource.data.score > resource.data.score || 
         (request.resource.data.score == resource.data.score && request.resource.data.time < resource.data.time)
       );
+
+      // Allow deletion for reset (In a production app, this should be restricted to admins)
+      allow delete: if true;
     }
   }
 }
