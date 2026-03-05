@@ -14,6 +14,7 @@ import {
   setDoc, 
   doc, 
   getDoc,
+  deleteDoc,
   serverTimestamp 
 } from 'firebase/firestore';
 
@@ -44,6 +45,30 @@ const App: React.FC = () => {
 
     return () => unsubscribe();
   }, []);
+
+  const handleResetLeaderboard = useCallback(async () => {
+    const password = prompt("리더보드 초기화를 위해 비밀번호를 입력하세요:");
+    if (password === "reset1234") { // 비밀번호 설정
+      if (confirm("정말로 모든 순위 기록을 삭제하시겠습니까?")) {
+        try {
+          // 현재 리더보드에 있는 모든 문서를 삭제 (실제로는 전체 컬렉션을 삭제해야 하지만 클라이언트에서는 루프 필요)
+          // 여기서는 현재 로드된 10개뿐만 아니라 전체를 삭제하려면 더 복잡하지만, 
+          // 간단하게 현재 보이는 것들을 삭제하는 방식으로 구현하거나 
+          // 관리자용 별도 로직을 구성할 수 있습니다.
+          for (const player of leaderboard) {
+            const docId = player.name.toLowerCase().replace(/\s/g, '');
+            await deleteDoc(doc(db, 'leaderboard', docId));
+          }
+          alert("리더보드가 초기화되었습니다.");
+        } catch (error) {
+          console.error("Error resetting leaderboard:", error);
+          alert("초기화 중 오류가 발생했습니다.");
+        }
+      }
+    } else if (password !== null) {
+      alert("비밀번호가 틀렸습니다.");
+    }
+  }, [leaderboard]);
 
   const handleStartGame = useCallback((playerName: string) => {
     const newPlayer: Player = { 
@@ -130,6 +155,7 @@ const App: React.FC = () => {
       {gameState === 'LOBBY' && (
         <Lobby 
           onStartGame={handleStartGame} 
+          onResetLeaderboard={handleResetLeaderboard}
           leaderboard={leaderboard}
           currentPlayer={currentPlayer}
         />

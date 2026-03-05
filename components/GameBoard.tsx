@@ -95,8 +95,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
       setHintStep(6);
       onCorrectAnswer(selectedPlayerId, currentScore); 
     } else {
-      // 감점 로직 제거
-      setWrongMessage("다시 시도해보세요!");
+      // 오답 시 1점 감점 (최소 0점)
+      setCurrentScore(prev => Math.max(0, prev - 1));
+      setWrongMessage("다시 시도해보세요! (-1점)");
 
       setErrorMsg(null);
       setFeedback("WRONG");

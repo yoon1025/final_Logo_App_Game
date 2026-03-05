@@ -4,11 +4,12 @@ import { Player } from '../types';
 
 interface LobbyProps {
   onStartGame: (name: string) => void;
+  onResetLeaderboard: () => void;
   leaderboard: Player[];
   currentPlayer?: Player | null;
 }
 
-const Lobby: React.FC<LobbyProps> = ({ onStartGame, leaderboard, currentPlayer }) => {
+const Lobby: React.FC<LobbyProps> = ({ onStartGame, onResetLeaderboard, leaderboard, currentPlayer }) => {
   const [nickname, setNickname] = useState('');
 
   const handleStart = (e?: React.FormEvent) => {
@@ -116,11 +117,18 @@ const Lobby: React.FC<LobbyProps> = ({ onStartGame, leaderboard, currentPlayer }
         </div>
 
         {/* Bottom Decorative Bar */}
-        <div className="p-4 bg-slate-100 shrink-0 border-t border-slate-200">
+        <div className="p-4 bg-slate-100 shrink-0 border-t border-slate-200 relative group">
           <div className="w-full py-1 flex items-center justify-center gap-2 text-slate-400 font-bold text-xs">
             <Sparkles size={14} className="text-amber-400" />
             실시간 랭킹 업데이트 중
           </div>
+          {/* Hidden Admin Reset Button */}
+          <button 
+            onClick={onResetLeaderboard}
+            className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-10 hover:opacity-100 transition-opacity text-[8px] text-slate-400"
+          >
+            Admin
+          </button>
         </div>
       </div>
 
